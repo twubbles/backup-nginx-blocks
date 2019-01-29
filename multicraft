@@ -1,0 +1,111 @@
+
+upstream php7-fpm-sock {
+        server unix:/run/php/php7.0-fpm.sock;
+}
+
+
+server {
+    listen       80;
+    server_name  clubziggy.xyz www.clubziggy.xyz lobstermagnet.club www.lobstermagnet.club;
+    return 301 https://clubziggy.xyz$request_uri;
+
+}
+
+server {
+    listen       443 ssl;
+    server_name  clubziggy.xyz;
+    root         /var/www/html/multicraft/;
+
+        include snippets/ssl-clubziggy.xyz.conf;
+        include snippets/ssl-params.conf;
+
+    index index.php;
+
+    access_log /var/log/nginx/minecraft-access_log;
+    error_log /var/log/nginx/minecraft-error_log;
+
+    location / {
+        try_files $uri $uri/ =404;
+    }
+
+    location ~ ^/protected {
+        deny all;
+    }
+
+    location ~ ^/(.*\.php)$ {
+        fastcgi_pass php7-fpm-sock;
+        fastcgi_param SCRIPT_FILENAME $request_filename;
+        include /etc/nginx/fastcgi_params;
+    }
+
+    location ~ \.php$ {
+        try_files $uri =404;
+        fastcgi_index index.php;
+        fastcgi_pass php7-fpm-sock;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        include /etc/nginx/fastcgi_params;
+    }
+}
+
+server {
+    listen       80;
+    server_name  maps.clubziggy.xyz;
+    return 301 https://maps.clubziggy.xyz$request_uri;
+}
+
+server {
+    listen       443 ssl;
+    server_name  maps.clubziggy.xyz;
+
+        include snippets/ssl-clubziggy.xyz.conf;
+        include snippets/ssl-params.conf;
+
+        location / {
+        proxy_pass http://127.0.0.1:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        }
+}
+	
+server {
+    listen       80;
+    server_name  evedev.clubziggy.xyz;
+    return 301 https://evedev.clubziggy.xyz$request_uri;
+}
+
+server {
+    listen       443 ssl;
+    server_name  evedev.clubziggy.xyz;
+
+        include snippets/ssl-clubziggy.xyz.conf;
+        include snippets/ssl-params.conf;
+
+        location / {
+        proxy_pass http://127.0.0.1:5000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+      }
+}
+
+server {
+    listen       80;
+    server_name  nas.clubziggy.xyz nas.lobstermagnet.club;
+    return 301 https://nas.clubziggy.xyz$request_uri;
+}
+
+server {
+    listen       443 ssl;
+    server_name  nas.clubziggy.xyz;
+
+        ssl_certificate /etc/letsencrypt/live/nas.clubziggy.xyz/fullchain.pem; # managed by Certbot
+        ssl_certificate_key /etc/letsencrypt/live/nas.clubziggy.xyz/privkey.pem; # managed by Certbot
+        ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+
+        location / {
+        proxy_pass http://192.168.1.18:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        }
+}
